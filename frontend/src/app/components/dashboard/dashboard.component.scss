@@ -1,5 +1,7 @@
+/* 1. Lock the wrapper to exactly the screen height */
 .dashboard-wrapper {
-  min-height: 100vh;
+  height: 100vh; /* Locked to viewport height */
+  overflow: hidden; /* Kills the main page scrollbar completely */
   background-color: #f0f2f5;
   display: flex;
   flex-direction: column;
@@ -13,19 +15,22 @@
   align-items: center;
   gap: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-
+  z-index: 10; /* Keeps shadow above content */
+  
   h1 { margin: 0; font-size: 24px; font-weight: 500; }
 }
 
 .main-content {
   display: flex;
   flex-direction: column; /* Stacks the Top Row (Dashboard) and Bottom Row (Chat) */
-  gap: 24px;
-  padding: 32px;
+  gap: 20px; /* Slightly tighter gap to save space */
+  padding: 20px 32px; /* Reduced top/bottom padding */
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
+  flex: 1; /* Takes remaining height below header */
+  min-height: 0; /* CRITICAL: Prevents flex children from overflowing */
 }
 
 /* =========================================
@@ -34,7 +39,7 @@
 .top-row {
   display: flex;
   gap: 24px;
-  height: 380px; /* Fixed height so both panels match */
+  flex: 0 0 320px; /* Shrunk height to leave more room for chat */
   width: 100%;
 }
 
@@ -123,14 +128,15 @@
    ========================================= */
 .chat-section {
   width: 100%;
-  height: 500px;
+  flex: 1; /* Magic line: dynamically takes ALL remaining vertical space */
+  min-height: 0; /* CRITICAL: Allows it to shrink without breaking the page */
   display: flex;
   flex-direction: column;
 }
 
 .chat-history {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1; /* Takes all space inside the card above the input box */
+  overflow-y: auto; /* ONLY the chat history will scroll */
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -221,7 +227,7 @@
   .send-btn { flex-shrink: 0; }
 }
 
-/* Add to the bottom of your SCSS file */
+/* Custom Slim Scrollbar for Chat */
 .chat-history::-webkit-scrollbar {
   width: 6px;
 }
