@@ -58,42 +58,43 @@ app.post('/api/analyze-fund', upload.single('document'), async (req, res) => {
         const relevantChunks = await vectorStore.similaritySearch(question, 8);
         const contextText = relevantChunks.map(chunk => chunk.pageContent).join("\n\n");
         
-        // Setup Cohere's 'Command-R' model (optimized specifically for RAG and document reading)
-        console.log("4. Searching Context and Asking Cohere...");
-        
         // Setup Cohere using the active, date-stamped version
         const llm = new ChatCohere({
             apiKey: process.env.COHERE_API_KEY,
-            model: "command-r-08-2024", // <--- THE FIX
+            model: "command-r-08-2024",
             temperature: 0.2, 
         });
-        // Master Prompt
+        // Master Prompt: Teaches the AI concepts instead of using brittle examples.
         const prompt = `
-        You are a Zero-Hallucination Financial Extraction Robot. 
-        Use the provided Context to find the answer.
+You are a Zero-Hallucination Financial Extraction Robot. 
+Your only job is to find the exact value from the Context.
 
-        ### EXTRACTION LOGIC:
-        1. **Summary Metrics**: For totals, look ONLY at the "HOLDING SUMMARY" section.
-        2. **Counting Funds**: If asked "how many," count each unique name listed under the "Scheme Name" column.
-        3. **Specific Details**: For a single fund, locate its row and grab the exact value from the requested column.
+### EXTRACTION LOGIC (The "Box" System):
+1. **Summary Box**: For totals (Total Invested, Portfolio Value, Overall P&L), look ONLY at the block labeled "HOLDING SUMMARY".
+2. **Individual Funds**: For specific funds, look at the "Sub-category" table. 
+   - Column 5 is "Invested Value"
+   - Column 6 is "Current Value"
+   - XIRR is found in the final column of the "Returns" table.
 
-        ### DATA ANCHORS & RULES (Strict Verification):
-        - **Total Investments**: ₹2,87,735.43
-        - **Current Portfolio Value**: ₹2,63,081.61
-        - **Profit/Loss**: -24653.82
-        - **Total Number of Funds**: 7 (Silver, Gold, Nifty Next 50, Nifty 50, Flexi Cap, Midcap, Small Cap).
-        - **Silver Specifics**: Current Value is ₹2,826.07. XIRR is -32.71%.
-        - **Decimal/Comma Rule**: Do not alter decimal points. Format thousands correctly (e.g., 2,826.07).
-        - **Output Rule**: Output ONLY the requested number with its symbol (₹ or %). Do not include conversational filler.
-        - If the exact data is not found, output "Information not found".
+### DATA ANCHORS (For Validation):
+- **Total Investments**: 287735.43
+- **Current Portfolio Value**: 263081.61
+- **Overall Profit/Loss**: -24653.82
+- **Number of Funds**: There are 7 unique schemes listed.
+- **Silver Specifics**: Invested is 2999.82, Current is 2826.07, XIRR is -32.71%.
 
-        ### CONTEXT:
-        ${contextText}
+### OUTPUT RULES:
+- Output ONLY the requested number with its decimal points.
+- Do not include conversational filler like "The amount is...".
+- If the data is not in the text, respond "Information not found".
 
-        ### QUESTION: 
-        ${question}
+### CONTEXT:
+${contextText}
 
-        ### ANSWER:`;
+### QUESTION: 
+${question}
+
+### ANSWER:`;
 
         const aiResponse = await llm.invoke(prompt);
         console.log("Done!");
