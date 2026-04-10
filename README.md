@@ -2,8 +2,11 @@
 
 A professional **Full-Stack AI Dashboard** that transforms static PDF investment reports into interactive, visual analytics. Built with **Angular**, **Node.js**, **LangChain**, and **Cohere Cloud AI**, this tool allows users to upload portfolio statements and receive instant financial insights through a dynamic dashboard and a real-time AI chat interface.
 
+<img width="2556" height="1346" alt="image" src="https://github.com/user-attachments/assets/54a405b3-ddf2-4c50-b3ce-e7fb57656af3" />
+
+
 ## 🚀 Live Demo
-* **Frontend (Vercel):** [https://stock-analyzer-fsd.vercel.app]([https://stock-analyzer-fsd.vercel.app](https://stock-report-analyzer-delta.vercel.app/))
+https://stock-report-analyzer-delta.vercel.app/
 
 ---
 
