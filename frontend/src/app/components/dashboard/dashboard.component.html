@@ -1,0 +1,83 @@
+<div class="dashboard-wrapper">
+  <header class="app-header">
+    <mat-icon class="header-icon">analytics</mat-icon>
+    <h1>Smart Portfolio Analyzer</h1>
+  </header>
+
+  <div class="main-content">
+    
+    <mat-card class="upload-panel">
+      <mat-card-header>
+        <mat-card-title>Document Source</mat-card-title>
+        <mat-card-subtitle>Upload SID or Fact Sheet</mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content class="upload-content">
+        <div class="drop-zone">
+          <mat-icon class="upload-icon">cloud_upload</mat-icon>
+          <p>Drag & drop or click to browse</p>
+          <input type="file" class="hidden-input" (change)="onFileSelected($event)" #fileInput accept="application/pdf">
+          <button mat-stroked-button color="primary" (click)="fileInput.click()">Select PDF</button>
+        </div>
+
+        @if (selectedFile) {
+          <div class="file-details">
+            <mat-icon color="accent">description</mat-icon>
+            <span class="filename">{{ selectedFile.name }}</span>
+          </div>
+        }
+      </mat-card-content>
+
+      <mat-card-actions class="upload-actions">
+        <button mat-flat-button color="primary" class="full-width" [disabled]="!selectedFile || isUploading" (click)="onUpload()">
+          @if (isUploading) {
+            <mat-spinner diameter="20" color="accent"></mat-spinner>
+            <span class="ml-2">Processing...</span>
+          } @else {
+            Upload & Process
+          }
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <mat-card class="chat-panel">
+      <mat-card-header>
+        <mat-card-title>AI Assistant</mat-card-title>
+        <mat-card-subtitle>Powered by Llama/Phi-3</mat-card-subtitle>
+      </mat-card-header>
+      <mat-divider></mat-divider>
+
+      <mat-card-content class="chat-history">
+        @for (msg of chatHistory; track msg) {
+          <div class="message-wrapper" [class.user-message]="msg.sender === 'user'" [class.ai-message]="msg.sender === 'ai'">
+            <div class="message-bubble">
+              {{ msg.text }}
+            </div>
+          </div>
+        }
+        
+        @if (isTyping) {
+          <div class="message-wrapper ai-message">
+            <div class="message-bubble typing-indicator">
+              <mat-spinner diameter="16"></mat-spinner>
+              <span>Analyzing document...</span>
+            </div>
+          </div>
+        }
+      </mat-card-content>
+
+      <mat-divider></mat-divider>
+
+      <mat-card-actions class="chat-input-area">
+        <mat-form-field appearance="outline" class="input-field">
+          <mat-label>Ask about the fund...</mat-label>
+          <input matInput [(ngModel)]="currentQuestion" (keyup.enter)="sendMessage()" [disabled]="!selectedFile || isUploading">
+        </mat-form-field>
+        <button mat-fab color="primary" class="send-btn" [disabled]="!currentQuestion.trim() || !selectedFile || isUploading" (click)="sendMessage()">
+          <mat-icon>send</mat-icon>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+  </div>
+</div>
