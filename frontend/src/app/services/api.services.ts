@@ -15,7 +15,7 @@ export interface AiResponse {
 export class ApiService {
   
   // Point this to your Express server
-  private apiUrl = 'https://stock-report-analyzer.onrender.com';
+  private apiUrl = 'https://stock-report-analyzer.onrender.com/api/analyze-fund';
 
   constructor(private http: HttpClient) { }
 
