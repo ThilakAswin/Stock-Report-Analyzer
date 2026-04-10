@@ -19,7 +19,7 @@
 
 .main-content {
   display: flex;
-  flex: 1;
+  flex-direction: column; /* Stacks the Top Row (Dashboard) and Bottom Row (Chat) */
   gap: 24px;
   padding: 32px;
   max-width: 1400px;
@@ -28,12 +28,22 @@
   box-sizing: border-box;
 }
 
-/* Left Panel: Upload */
+/* =========================================
+   TOP ROW: UPLOAD & DASHBOARD CHARTS
+   ========================================= */
+.top-row {
+  display: flex;
+  gap: 24px;
+  height: 380px; /* Fixed height so both panels match */
+  width: 100%;
+}
+
+/* Upload Panel */
 .upload-panel {
   flex: 0 0 350px;
   display: flex;
   flex-direction: column;
-  height: fit-content;
+  height: 100%;
 }
 
 .drop-zone {
@@ -48,6 +58,7 @@
   gap: 16px;
   margin-top: 16px;
   transition: background-color 0.2s ease;
+  cursor: pointer;
 
   &:hover { background-color: #eceff1; }
   .upload-icon { font-size: 48px; height: 48px; width: 48px; color: #90a4ae; }
@@ -75,18 +86,46 @@
 
 .upload-actions {
   padding: 16px;
+  margin-top: auto; /* Pushes button to the bottom of the card */
   .full-width {
     width: 100%; height: 48px; display: flex; justify-content: center; align-items: center;
   }
   .ml-2 { margin-left: 8px; }
 }
 
-/* Right Panel: Chat */
-.chat-panel {
-  flex: 1;
+/* Dashboard Chart Panel */
+.chart-panel {
+  flex: 1; /* Takes up all remaining space next to Upload */
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 150px);
+}
+
+.charts-container {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  padding: 16px;
+  
+  .chart-box {
+    flex: 1;
+    position: relative; /* Required for Chart.js responsiveness */
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    min-height: 250px;
+    background-color: #ffffff;
+  }
+}
+
+/* =========================================
+   BOTTOM ROW: CHAT SECTION
+   ========================================= */
+.chat-section {
+  width: 100%;
+  height: 500px;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-history {
@@ -96,7 +135,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background-color: #ffffff;
+  background-color: #f9f9f9;
 }
 
 .message-wrapper {
@@ -115,7 +154,8 @@
   &.ai-message {
     justify-content: flex-start;
     .message-bubble {
-      background-color: #f5f5f5;
+      background-color: #ffffff;
+      border: 1px solid #e0e0e0;
       color: #333;
       border-bottom-left-radius: 4px;
     }
@@ -128,24 +168,11 @@
   border-radius: 16px;
   font-size: 15px;
   line-height: 1.5;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .typing-indicator {
   display: flex; align-items: center; gap: 12px; color: #666; font-style: italic;
-}
-
-.chat-input-area {
-  padding: 16px 24px;
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  background-color: #fafafa;
-
-  .input-field {
-    flex: 1; margin-bottom: -1.25em; 
-  }
-  .send-btn { flex-shrink: 0; }
 }
 
 .suggestion-container {
@@ -179,4 +206,32 @@
   &:active {
     transform: translateY(0);
   }
+}
+
+.chat-input-area {
+  padding: 16px 24px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  background-color: #fafafa;
+
+  .input-field {
+    flex: 1; margin-bottom: -1.25em; 
+  }
+  .send-btn { flex-shrink: 0; }
+}
+
+/* Add to the bottom of your SCSS file */
+.chat-history::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-history::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-history::-webkit-scrollbar-thumb {
+  background: #cfd8dc;
+  border-radius: 4px;
+}
+.chat-history::-webkit-scrollbar-thumb:hover {
+  background: #b0bec5;
 }

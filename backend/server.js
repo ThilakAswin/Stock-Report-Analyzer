@@ -3,15 +3,12 @@ const cors = require('cors');
 const multer = require('multer');
 const { PDFLoader } = require("@langchain/community/document_loaders/fs/pdf");
 const { RecursiveCharacterTextSplitter } = require("@langchain/textsplitters");
-
-// NEW: Cohere Cloud AI Imports
 const { ChatCohere, CohereEmbeddings } = require("@langchain/cohere");
 const { MemoryVectorStore } = require("@langchain/classic/vectorstores/memory");
 
 require('dotenv').config();
 
 const app = express();
-
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
@@ -20,89 +17,67 @@ const upload = multer({ storage: storage });
 
 app.post('/api/analyze-fund', upload.single('document'), async (req, res) => {
     try {
-        if (!process.env.COHERE_API_KEY) {
-            console.error('COHERE_API_KEY not found in .env file.');
-            return res.status(500).json({ error: 'Server configuration error: Missing API Key.' });
-        }
-
-        if (!req.file) {
-            return res.status(400).json({ error: 'No PDF document uploaded.' });
-        }
-
+        if (!process.env.COHERE_API_KEY) return res.status(500).json({ error: 'Missing API Key.' });
+        if (!req.file) return res.status(400).json({ error: 'No PDF uploaded.' });
+        
         const question = req.body.question;
-        if (!question) {
-            return res.status(400).json({ error: 'No question provided.' });
-        }
+        if (!question) return res.status(400).json({ error: 'No question provided.' });
 
-        console.log("1. Loading PDF...");
+        console.log(`Processing Request: ${question === 'INIT_DASHBOARD' ? 'Building Dashboard' : 'Chat Question'}`);
+
         const blob = new Blob([req.file.buffer], { type: 'application/pdf' });
         const loader = new PDFLoader(blob);
         const docs = await loader.load();
 
-        console.log("2. Chunking Text...");
-        const textSplitter = new RecursiveCharacterTextSplitter({
-            chunkSize: 4000, 
-            chunkOverlap: 500,
-        });
+        const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 4000, chunkOverlap: 500 });
         const chunks = await textSplitter.splitDocuments(docs);
 
-        console.log("3. Creating Vector Embeddings (Cohere API)...");
-        // Cohere's industry-leading embedding model
-        const embeddings = new CohereEmbeddings({
-            apiKey: process.env.COHERE_API_KEY, 
-            model: "embed-english-v3.0",
-        });
+        const embeddings = new CohereEmbeddings({ apiKey: process.env.COHERE_API_KEY, model: "embed-english-v3.0" });
         const vectorStore = await MemoryVectorStore.fromDocuments(chunks, embeddings);
+        
+        // 🚨 FIX 1: Use a real search query to find the tables in the PDF!
+        let searchQuery = question;
+        if (question === 'INIT_DASHBOARD') {
+            searchQuery = "HOLDING SUMMARY Total Investments Current Portfolio Value Sub-category Invested Value Current Value";
+        }
 
-        console.log("4. Searching Context and Asking Cohere...");
-        const relevantChunks = await vectorStore.similaritySearch(question, 8);
+        const relevantChunks = await vectorStore.similaritySearch(searchQuery, 8);
         const contextText = relevantChunks.map(chunk => chunk.pageContent).join("\n\n");
         
-        // Setup Cohere using the active, date-stamped version
-        const llm = new ChatCohere({
-            apiKey: process.env.COHERE_API_KEY,
-            model: "command-r-08-2024",
-            temperature: 0.2, 
-        });
-        // Master Prompt: Teaches the AI concepts instead of using brittle examples.
-        const prompt = `
-You are a Zero-Hallucination Financial Extraction Robot. 
-Your only job is to find the exact value from the Context.
+        const llm = new ChatCohere({ apiKey: process.env.COHERE_API_KEY, model: "command-r-08-2024", temperature: 0.1 });
 
-### EXTRACTION LOGIC (The "Box" System):
-1. **Summary Box**: For totals (Total Invested, Portfolio Value, Overall P&L), look ONLY at the block labeled "HOLDING SUMMARY".
-2. **Individual Funds**: For specific funds, look at the "Sub-category" table. 
-   - Column 5 is "Invested Value"
-   - Column 6 is "Current Value"
-   - XIRR is found in the final column of the "Returns" table.
+        let prompt = "";
 
-### DATA ANCHORS (For Validation):
-- **Total Investments**: 287735.43
-- **Current Portfolio Value**: 263081.61
-- **Overall Profit/Loss**: -24653.82
-- **Number of Funds**: There are 7 unique schemes listed.
-- **Silver Specifics**: Invested is 2999.82, Current is 2826.07, XIRR is -32.71%.
+        if (question === 'INIT_DASHBOARD') {
+            // 🚨 FIX 2: Tell the AI to extract EVERY item, and sum up duplicates (like Large Cap)
+            prompt = `
+You are a strict JSON data extraction AI. Analyze the document context and extract key financial metrics.
+CRITICAL RULE: Do NOT leave out any categories. Extract ALL of them.
 
-### OUTPUT RULES:
-- Output ONLY the requested number with its decimal points.
-- Do not include conversational filler like "The amount is...".
-- If the data is not in the text, respond "Information not found".
+1. **Totals**: Extract the main aggregate numbers (e.g., Total Invested vs Current Value).
+2. **Allocation**: Find the detailed table of individual funds/sub-categories. Extract EVERY SINGLE category found (e.g., Silver, Gold, Large Cap, Flexi Cap, Mid Cap, Small Cap) and its "Current Value". 
+   - If a category appears more than once (e.g., two "Large Cap" funds), ADD their values together into one total for that category.
 
-### CONTEXT:
-${contextText}
+RETURN ONLY THIS EXACT JSON FORMAT. NO MARKDOWN. NO CONVERSATION.
+{
+  "totals": [150000, 175000],
+  "labels": ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Item 6", "Item 7"],
+  "allocation": [10, 20, 30, 40, 50, 60, 70]
+}
 
-### QUESTION: 
-${question}
-
-### ANSWER:`;
+Context: ${contextText}`;
+        } 
+        else {
+            prompt = `
+You are a Financial AI Assistant. Answer the user's question based ONLY on the context provided.
+Do NOT generate JSON. Provide a clear, concise text answer.
+Context: ${contextText}
+Question: ${question}
+Answer:`;
+        }
 
         const aiResponse = await llm.invoke(prompt);
-        console.log("Done!");
-
-        res.json({
-            message: 'Analysis Complete',
-            aiAnswer: aiResponse.content 
-        });
+        res.json({ message: 'Success', aiAnswer: aiResponse.content });
 
     } catch (error) {
         console.error('Error:', error.message);

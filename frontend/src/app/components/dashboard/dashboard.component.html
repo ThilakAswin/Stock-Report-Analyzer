@@ -5,87 +5,86 @@
   </header>
 
   <div class="main-content">
-    <mat-card class="upload-panel">
-      <mat-card-header>
-        <mat-card-title>Document Source</mat-card-title>
-        <mat-card-subtitle>Upload SID or Fact Sheet</mat-card-subtitle>
-      </mat-card-header>
-      
-      <mat-card-content class="upload-content">
-        <div class="drop-zone">
-          <mat-icon class="upload-icon">cloud_upload</mat-icon>
-          <p>Drag & drop or click to browse</p>
-          <input type="file" class="hidden-input" (change)="onFileSelected($event)" #fileInput accept="application/pdf">
-          <button mat-stroked-button color="primary" (click)="fileInput.click()">Select PDF</button>
-        </div>
-
-        @if (selectedFile) {
-          <div class="file-details">
-            <mat-icon color="accent">description</mat-icon>
-            <span class="filename">{{ selectedFile.name }}</span>
+    
+    <div class="top-row">
+      <mat-card class="upload-panel">
+        <mat-card-header>
+          <mat-card-title>Document Source</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="upload-content">
+          <div class="drop-zone">
+            <mat-icon class="upload-icon">cloud_upload</mat-icon>
+            <input type="file" class="hidden-input" (change)="onFileSelected($event)" #fileInput accept="application/pdf">
+            <button mat-stroked-button color="primary" (click)="fileInput.click()">Select PDF</button>
           </div>
-        }
-      </mat-card-content>
-
-      <mat-card-actions class="upload-actions">
-        <button mat-flat-button color="primary" class="full-width" [disabled]="!selectedFile || isUploading" (click)="onUpload()">
-          @if (isUploading) {
-            <mat-spinner diameter="20" color="accent"></mat-spinner>
-            <span class="ml-2">Processing...</span>
-          } @else {
-            Upload & Process
+          @if (selectedFile) {
+            <div class="file-details">
+              <mat-icon color="accent">description</mat-icon>
+              <span class="filename">{{ selectedFile.name }}</span>
+            </div>
           }
-        </button>
-      </mat-card-actions>
-    </mat-card>
+        </mat-card-content>
+        <mat-card-actions class="upload-actions">
+          <button mat-flat-button color="primary" class="full-width" [disabled]="!selectedFile || isUploading" (click)="onUpload()">
+            @if (isUploading) { <mat-spinner diameter="20" color="accent"></mat-spinner> } 
+            @else { Generate Dashboard }
+          </button>
+        </mat-card-actions>
+      </mat-card>
 
-    <mat-card class="chat-panel">
-      <mat-card-header>
-        <mat-card-title>AI Assistant</mat-card-title>
-        <mat-card-subtitle>Powered by Cohere Cloud AI</mat-card-subtitle>
-      </mat-card-header>
-      <mat-divider></mat-divider>
-
-      <mat-card-content class="chat-history">
-        @for (msg of chatHistory; track msg) {
-          <div class="message-wrapper" [class.user-message]="msg.sender === 'user'" [class.ai-message]="msg.sender === 'ai'">
-            <div class="message-bubble">
-              {{ msg.text }}
+      @if (dashboardReady) {
+        <mat-card class="chart-panel">
+          <mat-card-header><mat-card-title>Performance Overview</mat-card-title></mat-card-header>
+          <mat-card-content class="charts-container">
+            <div class="chart-box">
+              <canvas baseChart [data]="barChartData" [options]="chartOptions" [type]="'bar'"></canvas>
             </div>
-          </div>
-        }
+            <div class="chart-box">
+              <canvas baseChart [data]="pieChartData" [options]="chartOptions" [type]="'pie'"></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+
+    @if (dashboardReady) {
+      <mat-card class="chat-section">
+        <mat-card-header>
+          <mat-card-title>AI Document Q&A</mat-card-title>
+        </mat-card-header>
+        <mat-divider></mat-divider>
         
-        @if (isTyping) {
-          <div class="message-wrapper ai-message">
-            <div class="message-bubble typing-indicator">
-              <mat-spinner diameter="16"></mat-spinner>
-              <span>Analyzing document...</span>
+        <mat-card-content class="chat-history">
+          @for (msg of chatHistory; track msg) {
+            <div class="message-wrapper" [class.user-message]="msg.sender === 'user'" [class.ai-message]="msg.sender === 'ai'">
+              <div class="message-bubble">{{ msg.text }}</div>
             </div>
-          </div>
-        }
-      </mat-card-content>
+          }
+          @if (isTyping) {
+            <div class="message-wrapper ai-message">
+              <div class="message-bubble typing-indicator"><mat-spinner diameter="16"></mat-spinner><span>Analyzing...</span></div>
+            </div>
+          }
+        </mat-card-content>
 
-      @if (isUploaded) {
         <div class="suggestion-container">
           @for (hint of suggestions; track hint) {
-            <button class="suggestion-chip" (click)="askSuggestion(hint)">
-              {{ hint }}
-            </button>
+            <button class="suggestion-chip" (click)="askSuggestion(hint)">{{ hint }}</button>
           }
         </div>
-      }
+        <mat-divider></mat-divider>
 
-      <mat-divider></mat-divider>
+        <mat-card-actions class="chat-input-area">
+          <mat-form-field appearance="outline" class="input-field">
+            <mat-label>Ask a question about the report...</mat-label>
+            <input matInput [(ngModel)]="currentQuestion" (keyup.enter)="sendMessage()" [disabled]="isUploading">
+          </mat-form-field>
+          <button mat-fab color="primary" class="send-btn" [disabled]="!currentQuestion.trim() || isUploading" (click)="sendMessage()">
+            <mat-icon>send</mat-icon>
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    }
 
-      <mat-card-actions class="chat-input-area">
-        <mat-form-field appearance="outline" class="input-field">
-          <mat-label>Ask about the fund...</mat-label>
-          <input matInput [(ngModel)]="currentQuestion" (keyup.enter)="sendMessage()" [disabled]="!isUploaded || isUploading">
-        </mat-form-field>
-        <button mat-fab color="primary" class="send-btn" [disabled]="!currentQuestion.trim() || !isUploaded || isUploading" (click)="sendMessage()">
-          <mat-icon>send</mat-icon>
-        </button>
-      </mat-card-actions>
-    </mat-card>
   </div>
 </div>
