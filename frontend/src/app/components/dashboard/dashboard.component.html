@@ -5,7 +5,6 @@
   </header>
 
   <div class="main-content">
-    
     <mat-card class="upload-panel">
       <mat-card-header>
         <mat-card-title>Document Source</mat-card-title>
@@ -43,7 +42,7 @@
     <mat-card class="chat-panel">
       <mat-card-header>
         <mat-card-title>AI Assistant</mat-card-title>
-        <mat-card-subtitle>Powered by Llama/Phi-3</mat-card-subtitle>
+        <mat-card-subtitle>Powered by Cohere Cloud AI</mat-card-subtitle>
       </mat-card-header>
       <mat-divider></mat-divider>
 
@@ -66,18 +65,27 @@
         }
       </mat-card-content>
 
+      @if (isUploaded) {
+        <div class="suggestion-container">
+          @for (hint of suggestions; track hint) {
+            <button class="suggestion-chip" (click)="askSuggestion(hint)">
+              {{ hint }}
+            </button>
+          }
+        </div>
+      }
+
       <mat-divider></mat-divider>
 
       <mat-card-actions class="chat-input-area">
         <mat-form-field appearance="outline" class="input-field">
           <mat-label>Ask about the fund...</mat-label>
-          <input matInput [(ngModel)]="currentQuestion" (keyup.enter)="sendMessage()" [disabled]="!selectedFile || isUploading">
+          <input matInput [(ngModel)]="currentQuestion" (keyup.enter)="sendMessage()" [disabled]="!isUploaded || isUploading">
         </mat-form-field>
-        <button mat-fab color="primary" class="send-btn" [disabled]="!currentQuestion.trim() || !selectedFile || isUploading" (click)="sendMessage()">
+        <button mat-fab color="primary" class="send-btn" [disabled]="!currentQuestion.trim() || !isUploaded || isUploading" (click)="sendMessage()">
           <mat-icon>send</mat-icon>
         </button>
       </mat-card-actions>
     </mat-card>
-
   </div>
 </div>

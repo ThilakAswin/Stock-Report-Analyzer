@@ -147,3 +147,36 @@
   }
   .send-btn { flex-shrink: 0; }
 }
+
+.suggestion-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: #ffffff;
+}
+
+.suggestion-chip {
+  background-color: #f0f2f5;
+  border: 1px solid #dcdfe6;
+  border-radius: 16px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: #606266;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-family: inherit;
+
+  &:hover {
+    background-color: #e8f0fe;
+    border-color: #1976d2;
+    color: #1976d2;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
